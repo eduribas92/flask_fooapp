@@ -22,9 +22,10 @@ from flask_login import login_required
 
 app = Flask(__name__)
 
+mlab_credentials_file = "flask_fooApp/mlab/credentials.txt"
 
 try:
-    with open("fooApp/mlab/credentials.txt", 'r', encoding='utf-8') as f:
+    with open(mlab_credentials_file, 'r', encoding='utf-8') as f:
         [name, password, url, dbname] = f.read().splitlines()
         # db_conn = pymongo.MongoClient("mongodb://{}:{}@{}/{}".format(name, password, url, dbname))
         mongo_url = "mongodb://{}:{}@{}/{}".format(name, password, url, dbname)
@@ -90,7 +91,7 @@ def db_credentials():
     """Provide HTML form to edit DB credentials."""
     form = DBCredentialsForm(request.form)
     if request.method == 'POST' and form.validate():
-        with open("fooApp/mlab/credentials.txt", 'w', encoding='utf-8') as f:
+        with open(mlab_credentials_file, 'w', encoding='utf-8') as f:
             f.write(form.data["credentials"])
             print(form.data["credentials"])
         return render_template('credentials/db_credentials_updated.html')
