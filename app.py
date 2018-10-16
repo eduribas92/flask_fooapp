@@ -124,7 +124,8 @@ def login():
         username = form.username.data.lower().strip()
         password = form.password.data.lower().strip()
         user = MONGO.db.users.find_one({"username": form.username.data})
-        print(username, password)
+        print(username)
+        # print(username, password)
         if user and User.validate_login(form.password.data, user['password']):
             user_obj = User(user['username'])
             login_user(user_obj)
