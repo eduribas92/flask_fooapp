@@ -26,25 +26,35 @@ from flask_login import login_required
 app = Flask(__name__)
 
 mlab_credentials_file = "credentials.txt"
+DB_UP = False
+
+def db_connect():
+    global DB_UP
+    global MONGO
+
+    try:
+        with open(mlab_credentials_file, 'r', encoding='utf-8') as f:
+            [name, password, url, dbname] = f.read().splitlines()
+            # db_conn = pymongo.MongoClient("mongodb://{}:{}@{}/{}".format(name, password, url, dbname))
+            mongo_url = "mongodb://{}:{}@{}/{}".format(name, password, url, dbname)
+            app.config['MONGO_DBNAME'] = dbname
+            app.config['MONGO_URI'] = mongo_url
+            MONGO = PyMongo(app)
+            print(" - DB connected successfully!!!")
+            print("\t", name, url, dbname)
+        DB_UP = True
+
+    except:
+        print("Could not connect to DB!")
+        app.config['MONGO_DBNAME'] = "dummy_name"
+        app.config['MONGO_URI'] = "mongodb://dummy_name:dummy_password@dummy_url/dummy_name"
+        MONGO = PyMongo(app)
+        DB_UP = False
+
+    return
 
 
-try:
-    with open(mlab_credentials_file, 'r', encoding='utf-8') as f:
-        [name, password, url, dbname] = f.read().splitlines()
-        # db_conn = pymongo.MongoClient("mongodb://{}:{}@{}/{}".format(name, password, url, dbname))
-        mongo_url = "mongodb://{}:{}@{}/{}".format(name, password, url, dbname)
-        app.config['MONGO_DBNAME'] = dbname
-        app.config['MONGO_URI'] = mongo_url
-        mongo = PyMongo(app)
-        print(" - DB connected successfully!!!")
-        print("\t", name, url, dbname)
-    # DB_UP = True
-except:
-    print("Could not connect to DB!")
-    # app.config['MONGO_DBNAME'] = "dummy_name"
-    # app.config['MONGO_URI'] = "mongodb://dummy_name:dummy_password@dummy_url/dummy_name"
-    # mongo = PyMongo(app)
-    # DB_UP = False
+db_connect()
 
 app.config['SECRET_KEY'] = 'enydM2ANhdcoKwdVa0jWvEsbPFuQpMjf' # Create your own.
 app.config['SESSION_PROTECTION'] = 'strong'
@@ -59,7 +69,7 @@ login_manager.login_view = 'login'
 @login_manager.user_loader
 def load_user(user_id):
     """Flask-Login hook to load a User instance from ID."""
-    u = mongo.db.users.find_one({"username": user_id})
+    u = MONGO.db.users.find_one({"username": user_id})
     if not u:
         return None
     return User(u['username'])
@@ -97,7 +107,8 @@ def db_credentials():
         with open(mlab_credentials_file, 'w', encoding='utf-8') as f:
             f.write(form.data["credentials"])
             print(form.data["credentials"])
-        return render_template('credentials/db_credentials_updated.html')
+        db_connect()
+        return render_template('credentials/db_credentials_updated.html', db_status = str(DB_UP))
     # Either first load or validation error at this point.
     return render_template('credentials/db_credentials.html', form=form)
 
@@ -111,7 +122,7 @@ def login():
     if request.method == 'POST' and form.validate():
         username = form.username.data.lower().strip()
         password = form.password.data.lower().strip()
-        user = mongo.db.users.find_one({"username": form.username.data})
+        user = MONGO.db.users.find_one({"username": form.username.data})
         print(username, password)
         if user and User.validate_login(form.password.data, user['password']):
             user_obj = User(user['username'])
@@ -139,7 +150,7 @@ def products_list():
     # return 'Listing of all products we have.'
     """Provide HTML listing of all Products."""
     # Query: Get all Products objects, sorted by date.
-    products = mongo.db.products.find()[:]
+    products = MONGO.db.products.find()[:]
     return render_template('product/index.html', products=products)
 
 
@@ -150,7 +161,7 @@ def product_create():
     """Provide HTML form to create a new product."""
     form = ProductForm(request.form)
     if request.method == 'POST' and form.validate():
-        mongo.db.products.insert_one(form.data)
+        MONGO.db.products.insert_one(form.data)
         # Success. Send user back to full product list.
         return redirect(url_for('products_list'))
     # Either first load or validation error at this point.
@@ -162,7 +173,7 @@ def product_detail(product_id):
     # return 'Detail of product     #{}.'.format(product_id)
     """Provide HTML page with a given product."""
     # Query: get Product object by ID.
-    product = mongo.db.products.find_one({"_id": ObjectId(product_id) })
+    product = MONGO.db.products.find_one({"_id": ObjectId(product_id) })
     print(product)
     if product is None:
         # Abort with Not Found.
@@ -175,10 +186,10 @@ def product_detail(product_id):
 def product_edit(product_id):
     # return 'Form to edit product #.'.format(product_id)
     """Provide HTML form to edit an existing product."""
-    product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
+    product = MONGO.db.products.find_one({"_id": ObjectId(product_id)})
     form = ProductForm(request.form)
     if request.method == 'POST' and form.validate():
-        mongo.db.products.replace_one({'_id':ObjectId(product_id)},form.data)
+        MONGO.db.products.replace_one({'_id':ObjectId(product_id)},form.data)
         # Success. Send user back to full product list.
         return redirect(url_for('products_list'))
     # Either first load or validation error at this point.
@@ -190,7 +201,7 @@ def product_edit(product_id):
 def product_delete(product_id):
     # raise NotImplementedError('DELETE')
     """Delete record using HTTP DELETE, respond with JSON."""
-    result = mongo.db.products.delete_one({ "_id": ObjectId(product_id) })
+    result = MONGO.db.products.delete_one({ "_id": ObjectId(product_id) })
     if result.deleted_count == 0:
         # Abort with Not Found, but with simple JSON response.
         response = jsonify({'status': 'Not Found'})
