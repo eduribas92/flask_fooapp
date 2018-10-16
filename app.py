@@ -39,13 +39,13 @@ try:
         mongo = PyMongo(app)
         print(" - DB connected successfully!!!")
         print("\t", name, url, dbname)
-    # DB_UP = True
+    DB_UP = True
 except:
     print("Could not connect to DB!")
     # app.config['MONGO_DBNAME'] = "dummy_name"
     # app.config['MONGO_URI'] = "mongodb://dummy_name:dummy_password@dummy_url/dummy_name"
     # mongo = PyMongo(app)
-    # DB_UP = False
+    DB_UP = False
 
 
 app.config['SECRET_KEY'] = 'enydM2ANhdcoKwdVa0jWvEsbPFuQpMjf' # Create your own.
