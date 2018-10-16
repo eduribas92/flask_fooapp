@@ -6,8 +6,8 @@ from flask_pymongo import PyMongo
 
 from flask import abort, jsonify, redirect, render_template
 from flask import request, url_for
-from flask_fooApp.forms import ProductForm, DBCredentialsForm
-# from forms import ProductForm, DBCredentialsForm
+# from flask_fooApp.forms import ProductForm, DBCredentialsForm
+from forms import ProductForm, DBCredentialsForm
 
 import json
 from bson.objectid import ObjectId
@@ -16,10 +16,10 @@ import bson
 from flask_login import LoginManager, current_user
 from flask_login import login_user, logout_user
 
-from flask_fooApp.forms import LoginForm
-# from forms import LoginForm
-from flask_fooApp.models import User
-# from models import User
+# from flask_fooApp.forms import LoginForm
+from forms import LoginForm
+# from flask_fooApp.models import User
+from models import User
 
 from flask_login import login_required
 
