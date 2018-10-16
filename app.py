@@ -31,6 +31,7 @@ DB_UP = False
 def db_connect():
     global DB_UP
     global MONGO
+    global app
 
     try:
         with open(mlab_credentials_file, 'r', encoding='utf-8') as f:
