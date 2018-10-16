@@ -6,8 +6,8 @@ from flask_pymongo import PyMongo
 
 from flask import abort, jsonify, redirect, render_template
 from flask import request, url_for
-# from flask_fooApp.forms import ProductForm, DBCredentialsForm
-from forms import ProductForm, DBCredentialsForm
+from flask_fooApp.forms import ProductForm, DBCredentialsForm
+# from forms import ProductForm, DBCredentialsForm
 
 import json
 from bson.objectid import ObjectId
@@ -16,17 +16,16 @@ import bson
 from flask_login import LoginManager, current_user
 from flask_login import login_user, logout_user
 
-# from flask_fooApp.forms import LoginForm
-from forms import LoginForm
-# from flask_fooApp.models import User
-from models import User
+from flask_fooApp.forms import LoginForm
+# from forms import LoginForm
+from flask_fooApp.models import User
+# from models import User
 
 from flask_login import login_required
 
 app = Flask(__name__)
 
-# mlab_credentials_file = "flask_fooApp/mlab/credentials.txt"
-mlab_credentials_file = "mlab/credentials.txt"
+mlab_credentials_file = "credentials.txt"
 
 
 try:
@@ -39,14 +38,13 @@ try:
         mongo = PyMongo(app)
         print(" - DB connected successfully!!!")
         print("\t", name, url, dbname)
-    DB_UP = True
+    # DB_UP = True
 except:
     print("Could not connect to DB!")
     # app.config['MONGO_DBNAME'] = "dummy_name"
     # app.config['MONGO_URI'] = "mongodb://dummy_name:dummy_password@dummy_url/dummy_name"
     # mongo = PyMongo(app)
-    DB_UP = False
-
+    # DB_UP = False
 
 app.config['SECRET_KEY'] = 'enydM2ANhdcoKwdVa0jWvEsbPFuQpMjf' # Create your own.
 app.config['SESSION_PROTECTION'] = 'strong'
