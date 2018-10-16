@@ -1,3 +1,4 @@
 *.pyc
 __pycache__
-mlab/*.txt
+credentials.txt
+credentials_dummy.txt
