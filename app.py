@@ -6,7 +6,7 @@ from flask_pymongo import PyMongo
 
 from flask import abort, jsonify, redirect, render_template
 from flask import request, url_for
-# from flask_fooApp.forms import ProductForm, DBCredentialsForm
+#from flask_fooApp.forms import ProductForm, DBCredentialsForm
 from forms import ProductForm, DBCredentialsForm
 
 import json
@@ -16,37 +16,52 @@ import bson
 from flask_login import LoginManager, current_user
 from flask_login import login_user, logout_user
 
-# from flask_fooApp.forms import LoginForm
+#from flask_fooApp.forms import LoginForm
 from forms import LoginForm
-# from flask_fooApp.models import User
+#from flask_fooApp.models import User
 from models import User
 
 from flask_login import login_required
+
+import os
 
 app = Flask(__name__)
 
 mlab_credentials_file = "credentials.txt"
 DB_UP = False
+PROD_ENV = True
+#PROD_ENV = False
+
 
 def db_connect():
     global DB_UP
+    global PROD_ENV
     global MONGO
     global app
 
-    try:
+    if PROD_ENV:
+        print("PROD environment")
+        name = os.environ[fooApp_DB_USERNAME]
+        password = os.environ[fooApp_DB_PASS]
+        url = os.environ[fooApp_DB_URL]
+        dbname = os.environ[fooApp_DB_NAME]
+    else:
+        print("DEV environment")
         with open(mlab_credentials_file, 'r', encoding='utf-8') as f:
             [name, password, url, dbname] = f.read().splitlines()
-            # db_conn = pymongo.MongoClient("mongodb://{}:{}@{}/{}".format(name, password, url, dbname))
-            mongo_url = "mongodb://{}:{}@{}/{}".format(name, password, url, dbname)
-            app.config['MONGO_DBNAME'] = dbname
-            app.config['MONGO_URI'] = mongo_url
-            MONGO = PyMongo(app)
-            print(" - DB connected successfully!!!")
-            print("\t", name, url, dbname)
+
+    try:
+        # db_conn = pymongo.MongoClient("mongodb://{}:{}@{}/{}".format(name, password, url, dbname))
+        mongo_url = "mongodb://{}:{}@{}/{}".format(name, password, url, dbname)
+        app.config['MONGO_DBNAME'] = dbname
+        app.config['MONGO_URI'] = mongo_url
+        MONGO = PyMongo(app)
+        print("DB connected successfully!!!")
+        print("\t", name, url, dbname)
         DB_UP = True
 
     except:
-        print("Could not connect to DB!")
+        print("Could not connect to the DB!")
         app.config['MONGO_DBNAME'] = "dummy_name"
         app.config['MONGO_URI'] = "mongodb://dummy_name:dummy_password@dummy_url/dummy_name"
         MONGO = PyMongo(app)
