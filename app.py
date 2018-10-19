@@ -115,9 +115,10 @@ def error_not_found(error):
     return render_template('error/not_found.html'), 404
 
 
+"""
 @app.route('/db/', methods=['GET', 'POST'])
 def db_credentials():
-    """Provide HTML form to edit DB credentials."""
+    #Provide HTML form to edit DB credentials.
     form = DBCredentialsForm(request.form)
     if request.method == 'POST' and form.validate():
         with open(mlab_credentials_file, 'w', encoding='utf-8') as f:
@@ -127,6 +128,7 @@ def db_credentials():
         return render_template('credentials/db_credentials_updated.html', db_status = str(DB_UP))
     # Either first load or validation error at this point.
     return render_template('credentials/db_credentials.html', form=form)
+"""
 
 
 @app.route('/login/', methods=['GET', 'POST'])
