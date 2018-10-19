@@ -41,10 +41,10 @@ def db_connect():
 
     if PROD_ENV:
         print("PROD environment")
-        name = os.environ[fooApp_DB_USERNAME]
-        password = os.environ[fooApp_DB_PASS]
-        url = os.environ[fooApp_DB_URL]
-        dbname = os.environ[fooApp_DB_NAME]
+        name = os.environ["fooApp_DB_USERNAME"]
+        password = os.environ["fooApp_DB_PASS"]
+        url = os.environ["fooApp_DB_URL"]
+        dbname = os.environ["fooApp_DB_NAME"]
     else:
         print("DEV environment")
         with open(mlab_credentials_file, 'r', encoding='utf-8') as f:
