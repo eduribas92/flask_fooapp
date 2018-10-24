@@ -35,7 +35,7 @@ from data import load_data
 #flask_app = dash_app.server
 
 flask_app = Flask(__name__)
-dash_app = dash.Dash(__name__, server=flask_app, url_base_pathname='/dummypath')
+dash_app = dash.Dash(__name__, server=flask_app, url_base_pathname='/dashboards')
 dash_app.config.suppress_callback_exceptions = True
 dash_app.layout = html.Div()
 
@@ -276,34 +276,6 @@ request.is_xhr: {request.is_xhr}
 {request.headers}
     """.format(request=request).strip()
     return request_detail
-
-
-@flask_app.route('/dashboards/hello')
-def dashboard_hello():
-    global dash_app
-    dash_app.layout = html.Div(children=[
-        html.H1(children='Hello Dash'),
-
-        html.Div(children='''
-            Dash: A web application framework for Python.
-        '''),
-
-        dcc.Graph(
-            id='example-graph',
-            figure={
-                'data': [
-                    {'x': [1, 2, 3], 'y': [4, 1, 2], 'type': 'bar', 'name': 'SF'},
-                    {'x': [1, 2, 3], 'y': [2, 4, 5], 'type': 'bar', 'name': u'Montréal'},
-                ],
-                'layout': {
-                    'title': 'Dash Data Visualization'
-                }
-            }
-        )
-    ])
-
-    #return flask_app.redirect(app_dash.server)
-    return dash_app.index()
 
 
 data = load_data()
