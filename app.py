@@ -37,7 +37,7 @@ dash_app.layout = html.Div()
 mlab_credentials_file = "credentials.txt"
 DB_UP = False
 PROD_ENV = True
-PROD_ENV = False
+#PROD_ENV = False
 
 
 def db_connect():
