@@ -28,6 +28,8 @@ import dash_html_components as html
 import plotly.graph_objs as go
 import pandas as pd
 
+from data import load_data
+
 
 #dash_app = dash.Dash(__name__)
 #flask_app = dash_app.server
@@ -40,6 +42,7 @@ dash_app.layout = html.Div()
 mlab_credentials_file = "credentials.txt"
 DB_UP = False
 PROD_ENV = True
+#PROD_ENV = False
 
 
 def db_connect():
@@ -303,86 +306,142 @@ def dashboard_hello():
     return dash_app.index()
 
 
-df = pd.read_csv(
-        'https://gist.githubusercontent.com/chriddyp/'
-        'cb5392c35661370d95f300086accea51/raw/'
-        '8e0768211f6b747c0db42a9ce9a0937dafcbd8b2/'
-        'indicators.csv')
+data = load_data()
 
 
 @flask_app.route('/dashboards/eurostat')
 def dashboard_eurostat():
     global dash_app
 
-    available_indicators = df['Indicator Name'].unique()
+    available_indicators = data['NA_ITEM'].sort_values(ascending=[True]).unique()
+    countries_flg = data["Country"].sort_values(ascending=[True]).unique()
+    years = data['TIME']
 
     dash_app.layout = html.Div([
+
+        html.Div(style={'padding-top': '10px', 'padding-bottom': '10px'}),
+
         html.Div([
 
             html.Div([
-                dcc.Dropdown(
-                    id='xaxis-column',
-                    options=[{'label': i, 'value': i} for i in available_indicators],
-                    value='Fertility rate, total (births per woman)'
-                ),
-                dcc.RadioItems(
-                    id='xaxis-type',
-                    options=[{'label': i, 'value': i} for i in ['Linear', 'Log']],
-                    value='Linear',
-                    labelStyle={'display': 'inline-block'}
-                )
-            ],
-                style={'width': '48%', 'display': 'inline-block'}),
 
-            html.Div([
-                dcc.Dropdown(
-                    id='yaxis-column',
-                    options=[{'label': i, 'value': i} for i in available_indicators],
-                    value='Life expectancy at birth, total (years)'
-                ),
-                dcc.RadioItems(
-                    id='yaxis-type',
-                    options=[{'label': i, 'value': i} for i in ['Linear', 'Log']],
-                    value='Linear',
-                    labelStyle={'display': 'inline-block'}
-                )
-            ], style={'width': '48%', 'float': 'right', 'display': 'inline-block'})
+                html.Div([
+                    dcc.Dropdown(
+                        id='xaxis-column-1',
+                        options=[{'label': i, 'value': i} for i in available_indicators],
+                        value=available_indicators[0]
+                    ),
+                    html.Div(style={'padding-top': '5px', 'padding-bottom': '5px'}),
+                    dcc.RadioItems(
+                        id='xaxis-type-1',
+                        options=[{'label': i, 'value': i} for i in ['Linear', 'Log']],
+                        value='Linear',
+                        labelStyle={'display': 'inline-block'}
+                    )
+                ], style={'width': '48%', 'display': 'inline-block'}),
+
+                html.Div([
+                    dcc.Dropdown(
+                        id='yaxis-column-1',
+                        options=[{'label': i, 'value': i} for i in available_indicators],
+                        value=available_indicators[1]
+                    ),
+                    html.Div(style={'padding-top': '5px', 'padding-bottom': '5px'}),
+                    dcc.RadioItems(
+                        id='yaxis-type-1',
+                        options=[{'label': i, 'value': i} for i in ['Linear', 'Log']],
+                        value='Linear',
+                        labelStyle={'display': 'inline-block'}
+                    )
+                ], style={'width': '48%', 'float': 'right', 'display': 'inline-block'})
+
+            ]),
+
+            html.Div(style={'padding-top': '10px', 'padding-bottom': '20px'}),
+
+            dcc.Slider(
+                id='year-slider-1',
+                min=years.min(),
+                max=years.max(),
+                value=years.max(),
+                step=None,
+                marks={str(year): str(year) for year in years.unique()}
+            ),
+
+            html.Div(style={'padding-top': '20px', 'padding-bottom': '20px'}),
+
+            dcc.Graph(id='indicator-graphic-1')
+
         ]),
 
-        dcc.Graph(id='indicator-graphic'),
+        html.Div(style={'padding-top': '20px', 'padding-bottom': '20px'}),
 
-        dcc.Slider(
-            id='year--slider',
-            min=df['Year'].min(),
-            max=df['Year'].max(),
-            value=df['Year'].max(),
-            step=None,
-            marks={str(year): str(year) for year in df['Year'].unique()}
-        )
-    ])
+        html.Hr(),
+
+        html.Div(style={'padding-top': '20px', 'padding-bottom': '20px'}),
+
+        html.Div([
+
+            html.Div([
+
+                dcc.RadioItems(
+                    id='countries-flg',
+                    options=[{'label': i, 'value': i} for i in countries_flg],
+                    value=countries_flg[0]
+                ),
+
+                html.Div([
+                    dcc.Dropdown(
+                        id='countries-2',
+                        multi=True
+                    ),
+                ], style={'width': '48%', 'display': 'inline-block'}),
+
+                html.Div([
+                    dcc.Dropdown(
+                        id='yaxis-column-2',
+                        options=[{'label': i, 'value': i} for i in available_indicators],
+                        value="Exports of goods"  # available_indicators[0]
+                    ),
+                ], style={'width': '48%', 'float': 'right', 'display': 'inline-block'})
+
+            ]),
+
+            html.Div(style={'padding-top': '20px', 'padding-bottom': '20px'}),
+
+            dcc.Graph(id='indicator-graphic-2')
+
+        ]),
+
+        html.Div(style={'padding-top': '20px', 'padding-bottom': '20px'})
+
+
+    ],
+        style={'width': '80%', 'margin': 'auto'}
+    )
 
     return dash_app.index()
 
 
 @dash_app.callback(
-    dash.dependencies.Output('indicator-graphic', 'figure'),
+    dash.dependencies.Output('indicator-graphic-1', 'figure'),
     [
-        dash.dependencies.Input('xaxis-column', 'value'),
-        dash.dependencies.Input('yaxis-column', 'value'),
-        dash.dependencies.Input('xaxis-type', 'value'),
-        dash.dependencies.Input('yaxis-type', 'value'),
-        dash.dependencies.Input('year--slider', 'value')
+        dash.dependencies.Input('xaxis-column-1', 'value'),
+        dash.dependencies.Input('yaxis-column-1', 'value'),
+        dash.dependencies.Input('xaxis-type-1', 'value'),
+        dash.dependencies.Input('yaxis-type-1', 'value'),
+        dash.dependencies.Input('year-slider-1', 'value')
     ]
 )
-def update_graph(xaxis_column_name, yaxis_column_name,xaxis_type, yaxis_type,year_value):
+def update_graph_1(xaxis_column_name, yaxis_column_name, xaxis_type, yaxis_type, year_value):
 
-    dff = df[df['Year'] == year_value]
+    dff = data[data['TIME'] == year_value]
 
-    return {
+    graph1 = {
         'data': [go.Scatter(
-            x=dff[dff['Indicator Name'] == xaxis_column_name]['Value'],
-            y=dff[dff['Indicator Name'] == yaxis_column_name]['Value'],
-            text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
+            x=dff[dff['NA_ITEM'] == xaxis_column_name]['Value'],
+            y=dff[dff['NA_ITEM'] == yaxis_column_name]['Value'],
+            text=dff[dff['NA_ITEM'] == yaxis_column_name]['GEO'],
             mode='markers',
             marker={
                 'size': 15,
@@ -399,10 +458,76 @@ def update_graph(xaxis_column_name, yaxis_column_name,xaxis_type, yaxis_type,yea
                 'title': yaxis_column_name,
                 'type': 'linear' if yaxis_type == 'Linear' else 'log'
             },
-            margin={'l': 40, 'b': 40, 't': 10, 'r': 0},
+            margin={'l': 60, 'b': 50, 't': 10, 'r': 0},
             hovermode='closest'
         )
     }
+
+    return graph1
+
+
+@dash_app.callback(
+    dash.dependencies.Output('countries-2', 'options'),
+    [dash.dependencies.Input('countries-flg', 'value')])
+def set_countries_options(country_flg):
+    available_countries = data[data["Country"] == country_flg]["GEO"].sort_values(ascending=[True]).unique()
+    return [{'label': i, 'value': i} for i in available_countries]
+
+
+@dash_app.callback(
+    dash.dependencies.Output('countries-2', 'value'),
+    [dash.dependencies.Input('countries-2', 'options')])
+def set_countries_value(available_options):
+    return [available_options[i]['value'] for i in range(0,1)]
+
+
+@dash_app.callback(
+    dash.dependencies.Output('indicator-graphic-2', 'figure'),
+    [
+        dash.dependencies.Input('countries-2', 'value'),
+        dash.dependencies.Input('yaxis-column-2', 'value')
+    ]
+)
+def update_graph_2(countries, yaxis_column_name):
+
+    data_lines = []
+
+    years = data['TIME']
+    for country in countries:
+        dff = data[(data['GEO'] == country) & (data['NA_ITEM'] == yaxis_column_name)]
+        data_lines.append(
+            go.Scatter(
+                x=dff["TIME"],
+                y=dff['Value'],
+                text=country,
+                mode='lines+markers',
+                name=country,
+                marker={
+                    'size': 10,
+                    'opacity': 0.8,
+                    'line': {'width': 0.4}
+                }
+            )
+        )
+
+    graph2 = {
+        'data': data_lines,
+        'layout': go.Layout(
+            xaxis={
+                'title': 'YEAR',
+                'tick0': years.min()-1,
+                'dtick': 1,
+                'range': [years.min()-1,years.max()+1]
+            },
+            yaxis={
+                'title': yaxis_column_name
+            },
+            margin={'l': 60, 'b': 50, 't': 10, 'r': 0},
+            hovermode='closest'
+        )
+    }
+
+    return graph2
 
 
 if __name__ == '__main__':
