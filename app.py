@@ -6,7 +6,6 @@ from flask_pymongo import PyMongo
 
 from flask import abort, jsonify, redirect, render_template
 from flask import request, url_for
-#from flask_fooApp.forms import ProductForm, DBCredentialsForm
 from forms import ProductForm, DBCredentialsForm
 
 import json
@@ -16,28 +15,36 @@ import bson
 from flask_login import LoginManager, current_user
 from flask_login import login_user, logout_user
 
-#from flask_fooApp.forms import LoginForm
 from forms import LoginForm
-#from flask_fooApp.models import User
 from models import User
 
 from flask_login import login_required
 
 import os
 
-app = Flask(__name__)
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+
+
+#dash_app = dash.Dash(__name__)
+#flask_app = dash_app.server
+
+flask_app = Flask(__name__)
+dash_app = dash.Dash(__name__, server=flask_app, url_base_pathname='/dummypath')
+dash_app.layout = html.Div()
 
 mlab_credentials_file = "credentials.txt"
 DB_UP = False
 PROD_ENV = True
-#PROD_ENV = False
+PROD_ENV = False
 
 
 def db_connect():
     global DB_UP
     global PROD_ENV
     global MONGO
-    global app
+    global flask_app
 
     if PROD_ENV:
         print("PROD environment")
@@ -53,18 +60,18 @@ def db_connect():
     try:
         # db_conn = pymongo.MongoClient("mongodb://{}:{}@{}/{}".format(name, password, url, dbname))
         mongo_url = "mongodb://{}:{}@{}/{}".format(name, password, url, dbname)
-        app.config['MONGO_DBNAME'] = dbname
-        app.config['MONGO_URI'] = mongo_url
-        MONGO = PyMongo(app)
+        flask_app.config['MONGO_DBNAME'] = dbname
+        flask_app.config['MONGO_URI'] = mongo_url
+        MONGO = PyMongo(flask_app)
         print("DB connected successfully!!!")
         print("\t", name, url, dbname)
         DB_UP = True
 
     except:
         print("Could not connect to the DB!")
-        app.config['MONGO_DBNAME'] = "dummy_name"
-        app.config['MONGO_URI'] = "mongodb://dummy_name:dummy_password@dummy_url/dummy_name"
-        MONGO = PyMongo(app)
+        flask_app.config['MONGO_DBNAME'] = "dummy_name"
+        flask_app.config['MONGO_URI'] = "mongodb://dummy_name:dummy_password@dummy_url/dummy_name"
+        MONGO = PyMongo(flask_app)
         DB_UP = False
 
     return
@@ -72,13 +79,13 @@ def db_connect():
 
 db_connect()
 
-app.config['SECRET_KEY'] = 'enydM2ANhdcoKwdVa0jWvEsbPFuQpMjf' # Create your own.
-app.config['SESSION_PROTECTION'] = 'strong'
+flask_app.config['SECRET_KEY'] = 'enydM2ANhdcoKwdVa0jWvEsbPFuQpMjf' # Create your own.
+flask_app.config['SESSION_PROTECTION'] = 'strong'
 
 
 # Use Flask-Login to track current user in Flask's session.
 login_manager = LoginManager()
-login_manager.setup_app(app)
+login_manager.setup_app(flask_app)
 login_manager.login_view = 'login'
 
 
@@ -91,32 +98,32 @@ def load_user(user_id):
     return User(u['username'])
 
 
-@app.before_request
+@flask_app.before_request
 def callme_before_every_request():
     # Demo only: the before_request hook.
-    app.logger.debug('# Before Request #\n')
-    app.logger.debug(dump_request_detail(request))
+    flask_app.logger.debug('# Before Request #\n')
+    flask_app.logger.debug(dump_request_detail(request))
 
 
-@app.after_request
+@flask_app.after_request
 def callme_after_every_response(response):
     # Demo only: the after_request hook.
-    app.logger.debug('# After Request #\n' + repr(response))
+    flask_app.logger.debug('# After Request #\n' + repr(response))
     return response
 
 
-@app.errorhandler(404)
+@flask_app.errorhandler(404)
 def error_not_found(error):
     return render_template('error/not_found.html'), 404
 
 
-@app.errorhandler(bson.errors.InvalidId)
+@flask_app.errorhandler(bson.errors.InvalidId)
 def error_not_found(error):
     return render_template('error/not_found.html'), 404
 
 
 """
-@app.route('/db/', methods=['GET', 'POST'])
+@flask_app.route('/db/', methods=['GET', 'POST'])
 def db_credentials():
     #Provide HTML form to edit DB credentials.
     form = DBCredentialsForm(request.form)
@@ -131,7 +138,7 @@ def db_credentials():
 """
 
 
-@app.route('/login/', methods=['GET', 'POST'])
+@flask_app.route('/login/', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('products_list'))
@@ -152,19 +159,19 @@ def login():
     return render_template('user/login.html',form=form, error=error)
 
 
-@app.route('/logout/')
+@flask_app.route('/logout/')
 def logout():
     logout_user()
     return redirect(url_for('products_list'))
 
 
-@app.route('/')
+@flask_app.route('/')
 def index():
     # return render_template('index.html')
     return redirect(url_for('products_list'))
 
 
-@app.route('/products/')
+@flask_app.route('/products/')
 def products_list():
     # return 'Listing of all products we have.'
     """Provide HTML listing of all Products."""
@@ -173,7 +180,7 @@ def products_list():
     return render_template('product/index.html', products=products)
 
 
-@app.route('/products/create/', methods=['GET', 'POST'])
+@flask_app.route('/products/create/', methods=['GET', 'POST'])
 @login_required
 def product_create():
     # return 'Form to create a new product.'
@@ -187,7 +194,7 @@ def product_create():
     return render_template('product/create.html', form=form)
 
 
-@app.route('/products/<product_id>/')
+@flask_app.route('/products/<product_id>/')
 def product_detail(product_id):
     # return 'Detail of product     #{}.'.format(product_id)
     """Provide HTML page with a given product."""
@@ -200,7 +207,7 @@ def product_detail(product_id):
     return render_template('product/detail.html', product=product) # this is the controler, linking view (template) and model (data, product)
 
 
-@app.route('/products/<product_id>/edit/', methods=['GET', 'POST'])
+@flask_app.route('/products/<product_id>/edit/', methods=['GET', 'POST'])
 @login_required
 def product_edit(product_id):
     # return 'Form to edit product #.'.format(product_id)
@@ -215,7 +222,7 @@ def product_edit(product_id):
     return render_template('product/edit.html', form=form, product=product)
 
 
-@app.route('/products/<product_id>/delete/', methods=['DELETE'])
+@flask_app.route('/products/<product_id>/delete/', methods=['DELETE'])
 @login_required
 def product_delete(product_id):
     # raise NotImplementedError('DELETE')
@@ -229,20 +236,20 @@ def product_delete(product_id):
     return jsonify({'status': 'OK'})
 
 
-@app.route('/string/')
+@flask_app.route('/string/')
 def return_string():
     dump = dump_request_detail(request)
     return 'Hello, world!'
 
 
-@app.route('/object/')
+@flask_app.route('/object/')
 def return_object():
     dump = dump_request_detail(request)
     headers = {'Content-Type': 'text/plain'}
     return make_response(Response('Hello, world! \n' + dump, status=200, headers=headers))
 
 
-@app.route('/tuple/<path:resource>')
+@flask_app.route('/tuple/<path:resource>')
 def return_tuple(resource):
     dump = dump_request_detail(request)
     return 'Hello, world! \n' + dump, 200, {'Content-Type':'text/plain'}
@@ -266,5 +273,62 @@ request.is_xhr: {request.is_xhr}
     return request_detail
 
 
+@flask_app.route('/dashboards/hello')
+def dashboard_hello():
+    global dash_app
+    dash_app.layout = html.Div(children=[
+        html.H1(children='Hello Dash'),
+
+        html.Div(children='''
+            Dash: A web application framework for Python.
+        '''),
+
+        dcc.Graph(
+            id='example-graph',
+            figure={
+                'data': [
+                    {'x': [1, 2, 3], 'y': [4, 1, 2], 'type': 'bar', 'name': 'SF'},
+                    {'x': [1, 2, 3], 'y': [2, 4, 5], 'type': 'bar', 'name': u'Montréal'},
+                ],
+                'layout': {
+                    'title': 'Dash Data Visualization'
+                }
+            }
+        )
+    ])
+
+    #return flask_app.redirect(app_dash.server)
+    return dash_app.index()
+
+
+@flask_app.route('/dashboards/eurostat')
+def dashboard_eurostat():
+    global dash_app
+    dash_app.layout = html.Div(children=[
+        html.H1(children='Hello Dash 2'),
+
+        html.Div(children='''
+            Dash: A web application framework for Python.
+        '''),
+
+        dcc.Graph(
+            id='example-graph',
+            figure={
+                'data': [
+                    {'x': [1, 2, 3], 'y': [4, 1, 2], 'type': 'bar', 'name': 'SF'},
+                    {'x': [1, 2, 3], 'y': [2, 4, 5], 'type': 'bar', 'name': u'Montréal'},
+                ],
+                'layout': {
+                    'title': 'Dash Data Visualization'
+                }
+            }
+        )
+    ])
+
+    # return flask_app.redirect(app_dash.server)
+    return dash_app.index()
+
+
 if __name__ == '__main__':
-    app.run()
+    flask_app.run()
+    #dash_app.run_server()
