@@ -293,6 +293,10 @@ def dashboard_eurostat():
 
         html.Div(style={'padding-top': '10px', 'padding-bottom': '10px'}),
 
+        html.H1(children='Eurostat Dashboard', style={'margin': 'auto'}),
+
+        html.Div(style={'padding-top': '10px', 'padding-bottom': '15px'}),
+
         html.Div([
 
             html.Div([
